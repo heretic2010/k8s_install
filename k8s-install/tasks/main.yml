@@ -1,0 +1,150 @@
+---
+# tasks file for k8s-install
+- name: sed remove swap
+  ansible.builtin.command: sudo sed -i '/ swap / s/^/#/' /etc/fstab
+  register: sed
+
+- name: Set a hostname to master
+  ansible.builtin.hostname:
+    name: master-node
+    use: systemd
+  when: inventory_hostname == "master"
+
+- name: Set a hostname to slave1
+  ansible.builtin.hostname:
+    name: worker-node1
+    use: systemd
+  when: inventory_hostname == "slave1"
+
+- name: Set a hostname to slave2
+  ansible.builtin.hostname:
+    name: worker-node2
+    use: systemd
+  when: inventory_hostname == "slave2"
+
+- name: Template a file to /etc/hosts
+  ansible.builtin.template:
+    src: hosts.j2
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Template a file to /etc/modules-load.d/k8s.conf
+  ansible.builtin.template:
+    src: k8s.conf.j2
+    dest: /etc/modules-load.d/k8s.conf
+    owner: root
+    group: root
+    mode: '0777'
+
+- name: modprobe overlay
+  ansible.builtin.command: sudo modprobe overlay
+  register: overlay
+
+- name: modprobe br_netfilter
+  ansible.builtin.command: sudo modprobe br_netfilter
+  register: br_netfilter
+
+- name: Template a file to /etc/sysctl.d/k8s.conf
+  ansible.builtin.template:
+    src: k8s.conf_2.j2
+    dest: /etc/sysctl.d/k8s.conf
+    owner: root
+    group: root
+    mode: '0777'
+
+- name: sysctl --system
+  ansible.builtin.command: sysctl --system
+  register: sysctl
+- name: Update and upgrade apt packages
+  become: true
+  apt:
+    upgrade: yes
+    update_cache: yes
+    cache_valid_time: 86400 #One day
+
+- name: Install a list of packages
+  ansible.builtin.apt:
+    pkg:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+
+- name: Create a directory keyrings if it does not exist
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0777'
+  when: inventory_hostname == "master"
+
+# - name: apt-key.gpg
+#   shell: "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
+
+# - name: signed-by
+#   shell: "echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list"
+
+
+- name: easy update
+  shell: sudo apt-get update
+
+
+- name: Install dependencies
+  apt: name={{item}} state=latest
+  with_items:
+    - kubelet
+    - kubeadm
+    - kubectl
+
+- name: install docker.io
+  shell: sudo apt install docker.io -y
+
+- name: Create a directory keyrings if it does not exist
+  ansible.builtin.file:
+    path: /etc/containerd
+    state: directory
+    mode: '0777'
+
+- name: Template a file to conteiner_config.j2
+  ansible.builtin.template:
+    src: conteiner_config.j2
+    dest: /etc/containerd/config.toml
+    owner: root
+    group: root
+    mode: '0777'
+
+# - name: restart containerd.service
+#   shell: systemctl restart containerd.service
+
+# - name: restart kubelet.service
+#   shell: systemctl restart kubelet.service
+
+# - name: enable kubelet.service
+#   shell: sudo systemctl enable kubelet.service
+
+# - name: kubeadm config images pull
+#   shell: kubeadm config images pull
+
+# - name: kubeadm init
+#   shell: sudo kubeadm init --control-plane-endpoint=master-node --upload-certs
+#   when: inventory_hostname == "master"
+
+# - name: $HOME/.kube
+#   shell: mkdir -p $HOME/.kube
+#   when: inventory_hostname == "master"
+
+# - name: /etc/kubernetes/admin.conf $HOME/.kube/config
+#   shell: sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+#   when: inventory_hostname == "master"
+
+# - name: sudo chown $(id -u):$(id -g) $HOME/.kube/config
+#   shell: sudo chown $(id -u):$(id -g) $HOME/.kube/config
+#   when: inventory_hostname == "master"
+
+- name: calico
+  shell: curl https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/custom-resources.yaml -O
+  when: inventory_hostname == "master"
+
+- name: calico
+  shell: 'sed -i "s/cidr: 192\.168\.0\.0\/16/cidr: 10.96.0.0\/12/g" custom-resources.yaml'
+  when: inventory_hostname == "master
