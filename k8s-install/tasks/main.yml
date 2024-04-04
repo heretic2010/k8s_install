@@ -1,8 +1,8 @@
 ---
 # tasks file for k8s-install
 
-- name: sed remove swap
-  ansible.builtin.command: "sudo swapoff -a"
+- name: sed swap
+  shell: "sudo swapoff -a"
   register: sed
 
 
@@ -152,7 +152,7 @@
   when: inventory_hostname == "master"
 
 - name: /etc/kubernetes/admin.conf $HOME/.kube/config
-  shell: sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  shell: "sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config"
   when: inventory_hostname == "master"
 
 - name: sudo chown $(id -u):$(id -g) $HOME/.kube/config
