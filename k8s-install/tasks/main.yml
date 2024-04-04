@@ -1,8 +1,15 @@
 ---
 # tasks file for k8s-install
+
 - name: sed remove swap
-  ansible.builtin.command: sudo sed -i '/ swap / s/^/#/' /etc/fstab
+  ansible.builtin.command: "sudo swapoff -a"
   register: sed
+
+
+- name: sed remove swap
+  ansible.builtin.command: "sudo sed -i '/ swap / s/^/#/' /etc/fstab"
+  register: sed
+
 
 - name: Set a hostname to master
   ansible.builtin.hostname:
@@ -57,6 +64,7 @@
 - name: sysctl --system
   ansible.builtin.command: sysctl --system
   register: sysctl
+
 - name: Update and upgrade apt packages
   become: true
   apt:
@@ -125,17 +133,19 @@
 - name: kubeadm config images pull
   shell: kubeadm config images pull
 
-- name: kubeadm init
-  shell: sudo kubeadm init --pod-network-cidr=10.10.0.0/16
-  when: inventory_hostname == "master"
-
-- name: kubeadm init
+- name: kubeadm port
   shell: iptables -I INPUT 1 -p tcp --match multiport --dports 6443,2379:2380,10250:10252 -j ACCEPT
   when: inventory_hostname == "master"
 
-- name: kubeadm init
+- name: kubeadm port
   shell: iptables -I INPUT 1 -p tcp --match multiport --dports 10250,30000:32767 -j ACCEPT
   when: inventory_hostname != "master"
+
+
+- name: kubeadm init
+  shell: "sudo kubeadm init --pod-network-cidr=10.10.0.0/16"
+  when: inventory_hostname == "master"
+
 
 - name: $HOME/.kube
   shell: mkdir -p $HOME/.kube
