@@ -1,0 +1,15 @@
+control plane
+iptables -I INPUT 1 -p tcp --match multiport --dports 6443,2379:2380,10250:10252 -j ACCEPT
+worker nodes
+iptables -I INPUT 1 -p tcp --match multiport --dports 10250,30000:32767 -j ACCEPT
+
+
+Install the operator on your cluster.
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.27.2/manifests/tigera-operator.yaml
+curl https://raw.githubusercontent.com/projectcalico/calico/v3.27.2/manifests/custom-resources.yaml -O
+sed -i 's/cidr: 192\.168\.0\.0\/16/cidr: 10.10.0.0\/16/g' custom-resources.yaml
+kubectl create -f custom-resources.yaml
+
+k9s
+snap install k9s --devmode
+sudo ln -s /snap/k9s/current/bin/k9s /snap/bin/

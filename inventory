@@ -1,6 +1,6 @@
 [all]
 
-master ansible_host=192.168.0.9  
+master ansible_host=192.168.0.9 loc=master-node
 
-slave1 ansible_host=192.168.0.8  
-slave2 ansible_host=192.168.0.7  
+slave1 ansible_host=192.168.0.8  loc=worker-node1
+slave2 ansible_host=192.168.0.7  loc=worker-node2
