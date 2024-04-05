@@ -1,7 +1,7 @@
 Role Name
 =========
 
-A brief description of the role goes here.
+K8s install with ansible on ubuntu 22.04.
 
 Requirements
 ------------
