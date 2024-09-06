@@ -1,6 +1,6 @@
 [all]
 
-master ansible_host=192.168.0.9 loc=master-node
+master ansible_host=192.168.0.13  loc=k8s1.class.local
 
-slave1 ansible_host=192.168.0.8  loc=worker-node1
-slave2 ansible_host=192.168.0.7  loc=worker-node2
+slave1 ansible_host=192.168.0.14  loc=k8s2.class.local
+slave2 ansible_host=192.168.0.15  loc=k8s1.class.local
