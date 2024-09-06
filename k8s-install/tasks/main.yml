@@ -13,19 +13,19 @@
 
 - name: Set a hostname to master
   ansible.builtin.hostname:
-    name: master-node
+    name: k8s1.class.local
     use: systemd
   when: inventory_hostname == "master"
 
 - name: Set a hostname to slave1
   ansible.builtin.hostname:
-    name: worker-node1
+    name: k8s2.class.local
     use: systemd
   when: inventory_hostname == "slave1"
 
 - name: Set a hostname to slave2
   ansible.builtin.hostname:
-    name: worker-node2
+    name: k8s3.class.local
     use: systemd
   when: inventory_hostname == "slave2"
 
